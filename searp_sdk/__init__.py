@@ -1,6 +1,5 @@
 from .client import (
     DEFAULT_BASE_URL,
-    DEFAULT_ADMIN_BASE_URL,
     DEFAULT_TIMEOUT,
     SDK_VERSION,
     Client,
@@ -26,7 +25,6 @@ from .engine import EngineService
 from .cards import CardsService
 from .versions import VersionsService
 from .cinema import CinemaService
-from .admin import AdminService
 
 WithHeader = with_header
 WithHeaders = with_headers
@@ -34,7 +32,6 @@ New = new
 
 __all__ = [
     "DEFAULT_BASE_URL",
-    "DEFAULT_ADMIN_BASE_URL",
     "DEFAULT_TIMEOUT",
     "SDK_VERSION",
     "Client",
@@ -62,5 +59,4 @@ __all__ = [
     "CardsService",
     "VersionsService",
     "CinemaService",
-    "AdminService",
 ]

@@ -35,10 +35,6 @@ print(session["id"])
 `base_url` defaults to `http://127.0.0.1:8788`; the API base is derived as
 `<base_url>/v1` unless it already ends in `/v1`.
 
-The control-plane client is configured separately. With a custom engine
-`base_url`, `admin_base_url` defaults to `<base_url>/admin/v1`; with the
-default engine URL it defaults to `http://127.0.0.1:8790/admin/v1`.
-
 ## Services
 
 | Service | Purpose |
@@ -49,7 +45,6 @@ default engine URL it defaults to `http://127.0.0.1:8790/admin/v1`.
 | `client.cards` | Role-card CRUD, versions, translations |
 | `client.versions` | Version preview |
 | `client.cinema` | Cinema rounds and image tasks |
-| `client.admin` | Gateway health, identity, projects, and project live settings |
 
 ## Chat Turn
 
@@ -83,24 +78,6 @@ for event in client.sessions.turn_stream(
     if event.event == "token":
         print(event.data, end="")
 ```
-
-## Control Plane
-
-```python
-health = client.admin.health()
-whoami = client.admin.whoami()
-projects = client.admin.list_projects()
-project = client.admin.get_project("project-id")
-live = client.admin.update_project_live(
-    "project-id",
-    {"model": "your-model", "expected_revision": 3},
-)
-```
-
-`client.admin.request(method, path, body, *options)` exposes the full
-`/admin/v1` surface for endpoints without a typed method. Admin error
-responses follow `{"error":{"code":"...","message":"..."}}`; the SDK exposes
-the envelope code as `exc.code`.
 
 ## Errors
 

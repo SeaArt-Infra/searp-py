@@ -3,7 +3,6 @@ from __future__ import annotations
 import unittest
 
 from searp_sdk import (
-    DEFAULT_ADMIN_BASE_URL,
     Client,
     ClientConfig,
     ERR_CONFLICT,
@@ -40,7 +39,6 @@ class ClientTests(unittest.TestCase):
     def test_default_api_base_url(self) -> None:
         client = Client(ClientConfig(api_key="key"))
         self.assertEqual(client.api_base_url, "http://127.0.0.1:8788/v1")
-        self.assertEqual(client.admin_base_url, DEFAULT_ADMIN_BASE_URL)
 
     def test_explicit_api_base_url(self) -> None:
         client = Client(ClientConfig(api_key="key", base_url="https://rp.example.com/v1"))
@@ -51,7 +49,6 @@ class ClientTests(unittest.TestCase):
         self.assertIsInstance(client.Cards, CardsService)
         self.assertIsInstance(client.Versions, VersionsService)
         self.assertIsInstance(client.Cinema, CinemaService)
-        self.assertIsInstance(client.Admin, AdminService)
 
 
 class AdminTests(unittest.TestCase):
