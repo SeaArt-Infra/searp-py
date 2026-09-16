@@ -15,8 +15,8 @@ ERR_GENERAL = "general"
 @dataclass(eq=False)
 class SeaRPError(Exception):
     kind: str
-    code: str | None
     message: str
+    code: str | None = None
     status: int | None = None
 
     def __str__(self) -> str:

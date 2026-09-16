@@ -9,6 +9,7 @@ from searp_sdk import (
     ERR_CONFLICT,
     ERR_NOT_FOUND,
     SeaRPError,
+    ERR_NETWORK,
     SessionsService,
     with_header,
 )
@@ -87,6 +88,13 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(transport.calls[0]["path"], "/projects/p1/versions?cursor=2")
         self.assertEqual(transport.calls[1]["path"], "/projects/p1/versions/v1/diff?against=v0")
         self.assertEqual(transport.calls[2]["path"], "/catalog/card-1/cover")
+
+
+class ErrorTests(unittest.TestCase):
+    def test_network_error_can_be_constructed_without_code(self) -> None:
+        error = SeaRPError(kind=ERR_NETWORK, message="request failed: dns")
+        self.assertEqual(error.code, None)
+        self.assertEqual(error.message, "request failed: dns")
 
 
 class SessionsTests(unittest.TestCase):
