@@ -55,6 +55,33 @@ session = client.sessions.create(
 Use `client.sessions.create_experience` only when the project has already
 published an experience version.
 
+## Create A Role Card Session
+
+```python
+card = client.cards.create(
+    {
+        "user_id": "user-123",
+        "name": "Ada",
+        "gender": 2,
+        "introduction": "Port pilot",
+        "greeting": "Welcome to the fog harbor.",
+        "background": "Knows the tides and shipping lanes.",
+        "lang": "en",
+    }
+)
+
+session = client.sessions.create(
+    {
+        "user_id": "user-123",
+        "card_id": card["id"],
+    }
+)
+```
+
+Omit `card_version` to pin the latest card version. Use `client.cards.list`,
+`client.cards.get`, `client.cards.update`, and `client.cards.delete` to
+maintain cards.
+
 ## Run A Reply
 
 ```python
