@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import json
+import socket
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
+from urllib import error, request
+
+from .errors import ERR_GENERAL, ERR_NETWORK, SeaRPError
+
+
+@dataclass(slots=True)
+class TransportClient:
+    api_key: str
+    base_url: str
+    user_agent: str
+    timeout: float
+    default_headers: Mapping[str, Sequence[str]] = field(default_factory=dict)
+
+    def request(self, method: str, path: str, body: object | None, headers: Mapping[str, Sequence[str]] | None) -> tuple[int, bytes]:
+        req = self._build_request(method, path, body, headers)
+        try:
+            with request.urlopen(req, timeout=self.timeout) as response:
+                return response.status, response.read()
+        except error.HTTPError as exc:
+            return exc.code, exc.read()
+        except (error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+            raise SeaRPError(kind=ERR_NETWORK, message=f"request failed: {exc}") from exc
+
+    def request_stream(self, method: str, path: str, body: object | None, headers: Mapping[str, Sequence[str]] | None):
+        req = self._build_request(method, path, body, headers)
+        try:
+            return request.urlopen(req, timeout=self.timeout)
+        except error.HTTPError as exc:
+            return exc
+        except (error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+            raise SeaRPError(kind=ERR_NETWORK, message=f"request failed: {exc}") from exc
+
+    def _build_request(self, method: str, path: str, body: object | None, headers: Mapping[str, Sequence[str]] | None) -> request.Request:
+        data = None
+        if body is not None:
+            try:
+                data = json.dumps(body).encode("utf-8")
+            except TypeError as exc:
+                raise SeaRPError(kind=ERR_GENERAL, message=f"failed to marshal request: {exc}") from exc
+        return self._new_request(method, path, data, headers)
+
+    def _new_request(self, method: str, path: str, data: bytes | None, headers: Mapping[str, Sequence[str]] | None) -> request.Request:
+        request_headers: dict[str, str] = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "User-Agent": self.user_agent,
+        }
+        for key, values in self.default_headers.items():
+            _set_header(request_headers, key, ", ".join(values))
+        if headers:
+            for key, values in headers.items():
+                _set_header(request_headers, key, ", ".join(values))
+        return request.Request(url=f"{self.base_url}{path}", data=data, headers=request_headers, method=method)
+
+
+def _set_header(headers: dict[str, str], key: str, value: str) -> None:
+    for existing in tuple(headers):
+        if existing.lower() == key.lower():
+            del headers[existing]
+    headers[key] = value

@@ -1,0 +1,4 @@
+interface:
+  display_name: "SeaRP Python SDK"
+  short_description: "Build SeaRP engine API integrations in Python"
+  default_prompt: "Use $searp-py to implement a SeaRP engine SDK integration."
