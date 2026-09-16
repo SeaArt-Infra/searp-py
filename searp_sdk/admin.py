@@ -237,6 +237,79 @@ class AdminService:
     def preview_project_identity_migration(self, *options: RequestOption) -> dict:
         return _request_json(self._client, "GET", "/project-identity-migration/preview", None, options)
 
+
+    def list_project_rollouts(self, project_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, 'rollouts')}{_query_string(query)}", None, options)
+
+    def create_project_rollout(self, project_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, "rollouts"), body, options)
+
+    def get_current_project_rollouts(self, project_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, "rollouts/current"), None, options)
+
+    def get_project_rollout(self, project_id: str, rollout_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, f"rollouts/{quote(str(rollout_id), safe='')}"), None, options)
+
+    def update_project_rollout(self, project_id: str, rollout_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "PATCH", _project_subpath(project_id, f"rollouts/{quote(str(rollout_id), safe='')}"), body, options)
+
+    def delete_project_rollout(self, project_id: str, rollout_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "DELETE", _project_subpath(project_id, f"rollouts/{quote(str(rollout_id), safe='')}"), None, options)
+
+    def stop_project_rollout(self, project_id: str, rollout_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, f"rollouts/{quote(str(rollout_id), safe='')}/stop"), None, options)
+
+    def list_project_rollout_audits(self, project_id: str, rollout_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, f'rollouts/{quote(str(rollout_id), safe='')}/audit')}{_query_string(query)}", None, options)
+
+    def list_project_presets(self, project_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, "presets"), None, options)
+
+    def create_project_preset(self, project_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, "presets"), body, options)
+
+    def update_project_preset(self, project_id: str, preset_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "PUT", _project_subpath(project_id, f"presets/{quote(str(preset_id), safe='')}"), body, options)
+
+    def publish_project_preset(self, project_id: str, preset_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, f"presets/{quote(str(preset_id), safe='')}/publish"), body, options)
+
+    def list_project_sessions(self, project_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, 'sessions')}{_query_string(query)}", None, options)
+
+    def update_project_session(self, project_id: str, session_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "PATCH", _project_subpath(project_id, f"sessions/{quote(str(session_id), safe='')}"), body, options)
+
+    def list_project_suites(self, project_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, 'suites')}{_query_string(query)}", None, options)
+
+    def create_project_suite(self, project_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, "suites"), body, options)
+
+    def get_project_suite(self, project_id: str, suite_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, f"suites/{quote(str(suite_id), safe='')}"), None, options)
+
+    def list_project_evaluations(self, project_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, 'evaluations')}{_query_string(query)}", None, options)
+
+    def get_project_evaluation(self, project_id: str, evaluation_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, f"evaluations/{quote(str(evaluation_id), safe='')}"), None, options)
+
+    def compare_project_evaluation(self, project_id: str, evaluation_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", _project_subpath(project_id, f"evaluations/{quote(str(evaluation_id), safe='')}/compare"), None, options)
+
+    def cancel_project_evaluation(self, project_id: str, evaluation_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, f"evaluations/{quote(str(evaluation_id), safe='')}/cancel"), None, options)
+
+    def resume_project_evaluation(self, project_id: str, evaluation_id: str, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, f"evaluations/{quote(str(evaluation_id), safe='')}/resume"), None, options)
+
+    def list_project_feedback(self, project_id: str, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"{_project_subpath(project_id, 'feedback')}{_query_string(query)}", None, options)
+
+    def create_project_feedback(self, project_id: str, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", _project_subpath(project_id, "feedback"), body, options)
+
 def _project_path(project_id: str) -> str:
     return f"/projects/{quote(str(project_id), safe='')}"
 

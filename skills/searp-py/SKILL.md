@@ -125,3 +125,15 @@ a stale `expected_revision` or an idempotency key reused with different input.
   `prepare_project_identity_migration`, `purge_project_identity_migration`,
   `adopt_project_identity_migration`, `revert_project_identity_migration`,
   `preview_project_identity_migration`
+- `admin.list_project_rollouts`, `create_project_rollout`,
+  `get_current_project_rollouts`, `get_project_rollout`,
+  `update_project_rollout`, `delete_project_rollout`,
+  `stop_project_rollout`, `list_project_rollout_audits`
+- `admin.list_project_presets`, `create_project_preset`,
+  `update_project_preset`, `publish_project_preset`,
+  `list_project_sessions`, `update_project_session`
+- `admin.list_project_suites`, `create_project_suite`, `get_project_suite`,
+  `list_project_evaluations`, `get_project_evaluation`,
+  `compare_project_evaluation`, `cancel_project_evaluation`,
+  `resume_project_evaluation`, `list_project_feedback`,
+  `create_project_feedback`
