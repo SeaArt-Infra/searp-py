@@ -40,8 +40,20 @@ client = rp.Client(
 ## Create A Session
 
 ```python
-session = client.sessions.create_experience({"user_id": "user-123"})
+session = client.sessions.create(
+    {
+        "user_id": "user-123",
+        "request": {
+            "character": {"name": "Ada", "gender": 2},
+            "style": 1,
+            "lang": "en",
+        },
+    }
+)
 ```
+
+Use `client.sessions.create_experience` only when the project has already
+published an experience version.
 
 ## Run A Reply
 

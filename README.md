@@ -25,8 +25,15 @@ client = rp.Client(
     )
 )
 
-session = client.sessions.create_experience(
-    {"user_id": "visitor-1"},
+session = client.sessions.create(
+    {
+        "user_id": "visitor-1",
+        "request": {
+            "character": {"name": "Ada", "gender": 2},
+            "style": 1,
+            "lang": "en",
+        },
+    },
     rp.WithHeader("x-request-id", "request-1"),
 )
 print(session["id"])
@@ -34,6 +41,10 @@ print(session["id"])
 
 `base_url` defaults to `http://127.0.0.1:8788`; the API base is derived as
 `<base_url>/v1` unless it already ends in `/v1`.
+
+`sessions.create` is the general session entry point. Use
+`sessions.create_experience` only when the project has already published an
+experience version.
 
 ## Services
 
