@@ -137,3 +137,5 @@ a stale `expected_revision` or an idempotency key reused with different input.
   `compare_project_evaluation`, `cancel_project_evaluation`,
   `resume_project_evaluation`, `list_project_feedback`,
   `create_project_feedback`
+- `admin.project_engine`, `list_admin_cards`, `translations_queue`,
+  `translations_callback`

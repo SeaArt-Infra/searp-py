@@ -310,6 +310,18 @@ class AdminService:
     def create_project_feedback(self, project_id: str, body: dict, *options: RequestOption) -> dict:
         return _request_json(self._client, "POST", _project_subpath(project_id, "feedback"), body, options)
 
+    def project_engine(self, project_id: str, method: str, engine_path: str, body: dict | None, *options: RequestOption) -> dict:
+        return _request_json(self._client, method, _project_subpath(project_id, f"engine/{engine_path}"), body, options)
+
+    def list_admin_cards(self, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"/cards{_query_string(query)}", None, options)
+
+    def translations_queue(self, query: dict | None = None, *options: RequestOption) -> dict:
+        return _request_json(self._client, "GET", f"/translations/queue{_query_string(query)}", None, options)
+
+    def translations_callback(self, body: dict, *options: RequestOption) -> dict:
+        return _request_json(self._client, "POST", "/translations/callback", body, options)
+
 def _project_path(project_id: str) -> str:
     return f"/projects/{quote(str(project_id), safe='')}"
 
