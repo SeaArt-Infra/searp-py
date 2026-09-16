@@ -97,3 +97,31 @@ a stale `expected_revision` or an idempotency key reused with different input.
 - `admin.request`, `health`, `whoami`, `agent_contract`, `list_projects`,
   `create_project`, `get_project`, `delete_project`, `rotate_project_token`,
   `get_project_live`, `update_project_live`
+- `admin.raw`, `project_request`, `get_global_pack`, `update_global_pack`,
+  `get_project_pack`, `patch_project_pack`, `delete_project_pack`,
+  `fork_project_pack`
+- `admin.list_catalog`, `import_catalog`, `get_catalog_card`,
+  `update_catalog_card`, `delete_catalog_card`, `get_catalog_card_cover`
+- `admin.list_project_cards`, `get_project_card`, `update_project_card`,
+  `delete_project_card`, `set_project_card_listing`, `import_project_card`,
+  `import_project_cards_batch`, `fork_project_card`,
+  `list_project_card_versions`, `get_project_card_version`,
+  `delete_project_card_version`, `restore_project_card_version`
+- `admin.list_project_experiments`, `create_project_experiment`,
+  `get_project_experiment`, `update_project_experiment`,
+  `start_project_experiment`, `pause_project_experiment`,
+  `stop_project_experiment`
+- `admin.get_project_llm`, `update_project_llm`, `delete_project_llm`
+- `admin.list_project_versions`, `create_project_version`,
+  `get_project_version`, `diff_project_version`, `publish_project_version`,
+  `get_project_release`, `list_project_releases`, `rollback_project_release`
+- `admin.list_project_system_prompts`, `create_project_system_prompt`,
+  `set_project_system_prompt_default`, `get_project_system_prompt`,
+  `update_project_system_prompt`, `list_global_system_prompts`,
+  `create_global_system_prompt`, `set_global_system_prompt_default`,
+  `get_global_system_prompt`
+- `admin.list_project_user_sessions`, `get_project_user_session`,
+  `get_project_identity_migration`, `start_project_identity_migration`,
+  `prepare_project_identity_migration`, `purge_project_identity_migration`,
+  `adopt_project_identity_migration`, `revert_project_identity_migration`,
+  `preview_project_identity_migration`

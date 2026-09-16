@@ -78,6 +78,16 @@ class AdminTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "not_found")
         self.assertEqual(caught.exception.status, 404)
 
+    def test_project_and_catalog_paths(self) -> None:
+        transport = FakeTransport(payload=b'{"ok":true}')
+        service = AdminService(transport)
+        service.list_project_versions("p1", {"cursor": "2"})
+        service.diff_project_version("p1", "v1", "v0")
+        service.get_catalog_card_cover("card-1")
+        self.assertEqual(transport.calls[0]["path"], "/projects/p1/versions?cursor=2")
+        self.assertEqual(transport.calls[1]["path"], "/projects/p1/versions/v1/diff?against=v0")
+        self.assertEqual(transport.calls[2]["path"], "/catalog/card-1/cover")
+
 
 class SessionsTests(unittest.TestCase):
     def test_create_path_body_and_headers(self) -> None:
