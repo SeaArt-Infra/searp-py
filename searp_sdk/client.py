@@ -26,6 +26,7 @@ class ClientConfig:
     api_base_url: str = ""
     headers: Mapping[str, str | Sequence[str]] = field(default_factory=dict)
     timeout: float = DEFAULT_TIMEOUT
+    control_api_base_url: str = ""
 
 
 class Client:
@@ -49,7 +50,16 @@ class Client:
         self.sessions = SessionsService(transport)
         self.operations = OperationsService(transport)
         self.engine = EngineService(transport)
-        self.cards = CardsService(transport)
+        control_transport = None
+        if config.control_api_base_url:
+            control_transport = TransportClient(
+                api_key=self.api_key,
+                base_url=_normalize_url(config.control_api_base_url),
+                default_headers=self.headers,
+                user_agent=f"searp-py/{SDK_VERSION}",
+                timeout=timeout,
+            )
+        self.cards = CardsService(transport, control_transport)
         self.versions = VersionsService(transport)
         self.cinema = CinemaService(transport)
 

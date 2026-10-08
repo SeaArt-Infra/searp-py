@@ -28,9 +28,11 @@ client = rp.Client(
 session = client.sessions.create(
     {
         "user_id": "visitor-1",
-        "request": {
-            "character": {"name": "Ada", "gender": 2},
-            "style": 1,
+        "card_info": {
+            "name": "Ada", "gender": 2,
+            "introduction": "Port pilot",
+            "greeting": "Welcome to the fog harbor.",
+            "background": "Knows the tides and shipping lanes.",
             "lang": "en",
         },
     },
@@ -42,9 +44,13 @@ print(session["id"])
 `base_url` defaults to `http://127.0.0.1:8788`; the API base is derived as
 `<base_url>/v1` unless it already ends in `/v1`.
 
-`sessions.create` is the general session entry point. Use
-`sessions.create_experience` only when the project has already published an
-experience version.
+`sessions.create` accepts `card_id`, inline `card_info`, or `version_id`.
+Use `engine.debug_chat` for temporary card/sampling configurations;
+`request` and sampling fields are rejected by `sessions.create`.
+`sessions.create_experience` opens the currently published experience version.
+
+See [API reference](API_REFERENCE.md) for all routes, pagination, translations,
+multimodal input, per-turn parameters, and migration notes.
 
 ## Services
 
@@ -123,7 +129,7 @@ for event in client.sessions.turn_stream(
 
 ## Errors
 
-The engine returns plain-text HTTP errors:
+The engine returns plain-text or JSON HTTP errors:
 
 ```python
 try:
@@ -191,17 +197,21 @@ client = rp.Client(
 session = client.sessions.create(
     {
         "user_id": "user-123",
-        "request": {
-            "character": {"name": "Ada", "gender": 2},
-            "style": 1,
+        "card_info": {
+            "name": "Ada", "gender": 2,
+            "introduction": "Port pilot",
+            "greeting": "Welcome to the fog harbor.",
+            "background": "Knows the tides and shipping lanes.",
             "lang": "en",
         },
     }
 )
 ```
 
-Use `client.sessions.create_experience` only when the project has already
-published an experience version.
+Use `card_id`, `card_info`, or `version_id` with `sessions.create`;
+use `engine.debug_chat` with `card_info` for temporary sampling/configuration.
+`sessions.create` rejects a nested `request`.
+Use `client.sessions.create_experience` for the currently published version.
 
 ## Create A Role Card Session
 
@@ -256,12 +266,12 @@ a stale `expected_revision` or an idempotency key reused with different input.
 - `sessions.create`, `create_experience`, `get`, `history_message`, `turn`,
   `turn_stream`, `patch`, `rewind`, `fork`, `edit`
 - `operations.run`, `get`, `list`, `recover`, `traces`
-- `engine.health`, `capabilities`, `models`, `llm_status`, `llm_check`,
+- `engine.health`, `live`, `metrics`, `capabilities`, `models`, `llm_status`, `llm_check`,
   `generation_models`, `create_generation`, `get_generation`, `assemble`,
   `debug_chat`, `debug_chat_stream`
 - `cards.list`, `create`, `get`, `update`, `delete`, `import_cards`,
   `set_listing`, `list_versions`, `get_version`, `delete_version`,
-  `update_translation`, `restore_version`, `list_by_user`
+  `update_translation`, `restore_version`, `list_translations`, `save_translations`, `import_batch`, `list_by_user`
 - `versions.preview`
 - `cinema.list_rounds`, `create_round`, `create_round_stream`, `get_round`,
   `get_image_task`, `generate_image_task`, `save_image_result`

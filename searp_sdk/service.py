@@ -23,22 +23,34 @@ def request_json(client: TransportClient, method: str, path: str, body: object |
         raise SeaRPError(kind=ERR_GENERAL, message=f"failed to decode response: {exc}") from exc
 
 
+def request_text(client: TransportClient, method: str, path: str, body: object | None, options: tuple[RequestOption, ...]) -> str:
+    request_options = build_request_options(options)
+    status, payload = client.request(method, path, body, request_options.headers)
+    if status >= 400:
+        raise _http_error(status, payload)
+    return payload.decode("utf-8", "replace")
+
+
 @dataclass(slots=True)
 class StreamEvent:
     event: str
     data: str
     done: bool
     err: Exception | None = None
+    id: str = ""
 
 
 def stream_sse(client: TransportClient, method: str, path: str, body: object | None, options: tuple[RequestOption, ...]) -> Iterator[StreamEvent]:
     request_options = build_request_options(options)
+    request_options.headers = {key: value for key, value in request_options.headers.items() if key.lower() != "accept"}
+    request_options.headers["Accept"] = ["text/event-stream"]
     response = client.request_stream(method, path, body, request_options.headers)
     if isinstance(response, error.HTTPError):
         payload = response.read().decode("utf-8", "replace")
         raise _http_error(response.code, payload.encode("utf-8"))
 
     event_name = ""
+    event_id = ""
     data_lines: list[str] = []
 
     def flush() -> StreamEvent | None:
@@ -46,6 +58,7 @@ def stream_sse(client: TransportClient, method: str, path: str, body: object | N
         if not data_lines and not event_name:
             return None
         event = StreamEvent(
+            id=event_id,
             event=event_name,
             data="\n".join(data_lines),
             done=event_name == "done",
@@ -65,14 +78,19 @@ def stream_sse(client: TransportClient, method: str, path: str, body: object | N
             if line.startswith(":"):
                 continue
             if line.startswith("event:"):
-                event_name = line[len("event:") :].strip()
+                event_name = line[len("event:") :].removeprefix(" ")
             elif line.startswith("data:"):
-                data_lines.append(line[len("data:") :].lstrip())
+                data_lines.append(line[len("data:") :].removeprefix(" "))
+            elif line.startswith("id:") and "\0" not in line:
+                event_id = line[len("id:") :].removeprefix(" ")
         event = flush()
         if event is not None:
             yield event
     except Exception as exc:
         raise SeaRPError(kind=ERR_NETWORK, message=f"stream read failed: {exc}") from exc
+    finally:
+        if hasattr(response, "close"):
+            response.close()
 
 
 def _http_error(status: int, payload: bytes) -> SeaRPError:

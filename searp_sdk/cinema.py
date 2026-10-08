@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from .request_options import RequestOption
 from .service import request_json, stream_sse
@@ -11,8 +11,13 @@ class CinemaService:
     def __init__(self, client: TransportClient) -> None:
         self._client = client
 
-    def list_rounds(self, session_id: str, *options: RequestOption) -> dict:
-        return request_json(self._client, "GET", f"{_path(session_id)}/rounds", None, options)
+    def list_rounds(self, session_id: str, query: dict | None = None, *options: RequestOption) -> list:
+        if callable(query):
+            options = (query, *options)
+            query = None
+        values = {key: query[key] for key in ("limit", "offset") if query and query.get(key) is not None}
+        suffix = f"?{urlencode(values)}" if values else ""
+        return request_json(self._client, "GET", f"{_path(session_id)}/rounds{suffix}", None, options)
 
     def create_round(self, session_id: str, body: dict, *options: RequestOption) -> dict:
         return request_json(self._client, "POST", f"{_path(session_id)}/rounds", body, options)

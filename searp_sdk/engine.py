@@ -3,7 +3,7 @@ from __future__ import annotations
 from urllib.parse import quote
 
 from .request_options import RequestOption
-from .service import request_json, stream_sse
+from .service import request_json, request_text, stream_sse
 from .transport import TransportClient
 
 
@@ -13,6 +13,12 @@ class EngineService:
 
     def health(self, *options: RequestOption) -> dict:
         return request_json(self._client, "GET", "/health", None, options)
+
+    def live(self, *options: RequestOption) -> dict:
+        return request_json(self._client, "GET", "/live", None, options)
+
+    def metrics(self, *options: RequestOption) -> str:
+        return request_text(self._client, "GET", "/metrics", None, options)
 
     def capabilities(self, *options: RequestOption) -> dict:
         return request_json(self._client, "GET", "/capabilities", None, options)

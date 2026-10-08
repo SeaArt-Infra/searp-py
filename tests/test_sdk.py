@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from searp_sdk import (
     Client,
@@ -18,6 +19,7 @@ from searp_sdk.engine import EngineService
 from searp_sdk.operations import OperationsService
 from searp_sdk.versions import VersionsService
 from searp_sdk.admin import AdminService
+from urllib.parse import parse_qs, urlsplit
 
 
 class FakeTransport:
@@ -126,6 +128,117 @@ class OperationsTests(unittest.TestCase):
         with self.assertRaises(SeaRPError) as caught:
             service.run("s1", {"idempotency_key": "k"})
         self.assertEqual(caught.exception.kind, ERR_CONFLICT)
+
+
+class LatestContractTests(unittest.TestCase):
+    def test_cinema_rounds_page_arrays_and_keep_legacy_options(self) -> None:
+        transport = FakeTransport(payload=b'[{"round_id":"r1","cost":"0.01"}]')
+        service = CinemaService(transport)
+        caller = with_header("x-request-id", "req-1")
+        rounds = service.list_rounds("s1", {"limit": 20, "offset": 0}, caller)
+        service.list_rounds("s1", caller)
+        self.assertEqual(rounds[0]["round_id"], "r1")
+        self.assertEqual(parse_qs(urlsplit(transport.calls[0]["path"]).query), {"limit": ["20"], "offset": ["0"]})
+        self.assertEqual(transport.calls[1]["headers"]["x-request-id"], ["req-1"])
+
+    def test_batch_import_uses_explicit_control_api_and_project_token(self) -> None:
+        client = Client(ClientConfig(api_key="project-key", base_url="https://engine.example", control_api_base_url="https://control.example/admin/v1/"))
+        transport = client.cards._control_client
+        body = {"cards": [{"name": "Ada", "introduction": "Pilot", "greeting": "Hi", "background": "Harbor"}]}
+
+        def request(method, path, payload, headers):
+            req = transport._build_request(method, path, payload, headers)
+            self.assertEqual(req.full_url, "https://control.example/admin/v1/cards/import/batch")
+            self.assertEqual(req.method, "POST")
+            self.assertEqual(req.get_header("Authorization"), "Bearer project-key")
+            self.assertEqual(req.get_header("X-request-id"), "req-1")
+            self.assertEqual(payload, body)
+            return 201, b'{"items":[{"id":"c1"}]}'
+
+        with patch.object(type(transport), "request", side_effect=request):
+            self.assertEqual(client.cards.import_batch(body, with_header("x-request-id", "req-1"))["items"][0]["id"], "c1")
+        with self.assertRaisesRegex(SeaRPError, "control_api_base_url"):
+            Client().cards.import_batch(body)
+
+    def test_card_queries_translation_and_restore(self) -> None:
+        transport = FakeTransport()
+        service = CardsService(transport)
+        caller = with_header("x-request-id", "req-1")
+        service.list({"limit": 20, "offset": 0})
+        service.list_by_user("u1", {"limit": 20, "offset": 0})
+        service.list_versions("c1", {"limit": 20, "before_version": 7}, caller)
+        service.get_version("c1", 3, {"lang": "zh"}, caller)
+        service.list_versions("c1", caller)
+        service.get_version("c1", 3, caller)
+        service.list_translations("c1", 3)
+        body = {"user_id": "u1", "expected_latest_version": 7, "lang": "zh", "translations": {"name": "艾达"}}
+        service.save_translations("c1", 3, body, caller)
+        service.restore_version("c1", 3, {"expected_latest_version": 7, "change_note": "restore"}, caller)
+        calls = transport.calls
+        self.assertEqual(parse_qs(urlsplit(calls[0]["path"]).query), {"limit": ["20"], "offset": ["0"]})
+        self.assertEqual(parse_qs(urlsplit(calls[1]["path"]).query)["limit"], ["20"])
+        self.assertEqual(parse_qs(urlsplit(calls[2]["path"]).query)["before_version"], ["7"])
+        self.assertEqual(calls[3]["path"], "/cards/c1/versions/3?lang=zh")
+        for index in (2, 3, 4, 5, 7, 8):
+            self.assertEqual(calls[index]["headers"]["x-request-id"], ["req-1"])
+        self.assertEqual(calls[6]["path"], "/cards/c1/versions/3/translations")
+        self.assertEqual(calls[7]["method"], "POST")
+        self.assertEqual(calls[7]["body"], body)
+        self.assertEqual(calls[8]["body"], {"expected_latest_version": 7, "change_note": "restore"})
+        with self.assertRaisesRegex(SeaRPError, "expected_latest_version"):
+            service.restore_version("c1", 3)
+
+    def test_liveness_metrics_and_json_error_evidence(self) -> None:
+        transport = FakeTransport(payload=b'{"status":"live"}')
+        service = EngineService(transport)
+        self.assertEqual(service.live()["status"], "live")
+        self.assertEqual(transport.calls[0]["path"], "/live")
+        transport.payload = b"searp_requests_total 1\n"
+        self.assertEqual(service.metrics(), "searp_requests_total 1\n")
+        self.assertEqual(transport.calls[1]["path"], "/metrics")
+        transport.status = 422
+        transport.payload = b'{"error":{"code":"invalid","message":"unknown field"},"session_id":"s1"}'
+        with self.assertRaises(SeaRPError) as caught:
+            service.debug_chat({})
+        self.assertEqual(caught.exception.kind, "invalid")
+        self.assertEqual(caught.exception.code, "invalid")
+        self.assertEqual(caught.exception.message, "unknown field")
+        self.assertEqual(caught.exception.session_id, "s1")
+        self.assertEqual(caught.exception.payload["session_id"], "s1")
+
+    def test_cinema_sse_ids_whitespace_and_response_close(self) -> None:
+        import io
+
+        response = io.BytesIO(b"id: evt-2\nevent: cinema\ndata:  leading and trailing  \n\nevent: done\ndata: finished")
+        transport = FakeTransport()
+
+        def request_stream(method, path, body, headers):
+            transport.calls.append({"method": method, "path": path, "body": body, "headers": headers})
+            return response
+
+        transport.request_stream = request_stream
+        events = list(CinemaService(transport).create_round_stream("s1", {"content": "go"}, with_header("Last-Event-ID", "evt-1"), with_header("Idempotency-Key", "round-1")))
+        headers = transport.calls[0]["headers"]
+        self.assertEqual(headers["Accept"], ["text/event-stream"])
+        self.assertEqual(headers["Last-Event-ID"], ["evt-1"])
+        self.assertEqual(headers["Idempotency-Key"], ["round-1"])
+        self.assertEqual(events[0].id, "evt-2")
+        self.assertEqual(events[0].data, " leading and trailing  ")
+        self.assertEqual(events[1].data, "finished")
+        self.assertTrue(events[1].done)
+        self.assertTrue(response.closed)
+
+    def test_multimodal_chat_preserves_inputs_and_response_evidence(self) -> None:
+        import json
+
+        message = [{"type": "text", "text": "what?"}, {"type": "image_url", "image_url": {"url": "https://cdn.example/a.png", "detail": "auto"}}]
+        body = {"action": "reply", "message": message, "lang": "zh", "lastest_system_prompt": "brief", "favorability_score": 45, "user": {"name": "Visitor"}, "metadata": {"history": [{"role": "user", "content": "hi"}]}, "top_p": 0.9, "thinking_mode": True}
+        transport = FakeTransport(payload=json.dumps({"history": [{"role": "user", "content": message}], "history_import": {"seeded": {"messages": 1, "dropped": 0}}, "prompt_redacted": True}).encode())
+        result = SessionsService(transport).turn("s1", body)
+        self.assertEqual(transport.calls[0]["body"], body)
+        self.assertEqual(result["history"][0]["content"], message)
+        self.assertEqual(result["history_import"]["seeded"]["messages"], 1)
+        self.assertTrue(result["prompt_redacted"])
 
 
 if __name__ == "__main__":
