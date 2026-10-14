@@ -121,6 +121,28 @@ class SessionsTests(unittest.TestCase):
         self.assertEqual(events[0].data, "Hel")
         self.assertTrue(events[1].done)
 
+    def test_proactive_path_body_and_response(self) -> None:
+        transport = FakeTransport(payload=b'{"id":"s1","revision":2,"text":"Hello again","operation":{"id":"p1"}}')
+        service = SessionsService(transport)
+        response = service.proactive("s1", {"idempotency_key": "p1"})
+        self.assertEqual(response["text"], "Hello again")
+        self.assertEqual(response["operation"]["id"], "p1")
+        call = transport.calls[0]
+        self.assertEqual(call["method"], "POST")
+        self.assertEqual(call["path"], "/sessions/s1/proactive")
+        self.assertEqual(call["body"], {"idempotency_key": "p1"})
+
+    def test_proactive_stream(self) -> None:
+        class ProactiveTransport(FakeTransport):
+            def request_stream(self, method: str, path: str, body, headers):
+                self.calls.append({"method": method, "path": path, "body": body, "headers": headers})
+                return [b"event: operation\n", b"data: {\"id\":\"p1\"}\n", b"\n", b"event: token\n", b"data: Hi\n", b"\n", b"event: done\n", b"data: s1\n", b"\n"]
+
+        service = SessionsService(ProactiveTransport())
+        events = list(service.proactive_stream("s1", {"idempotency_key": "p1", "stream": True}))
+        self.assertEqual([event.event for event in events], ["operation", "token", "done"])
+        self.assertEqual(events[0].data, '{"id":"p1"}')
+
 
 class OperationsTests(unittest.TestCase):
     def test_conflict_error(self) -> None:

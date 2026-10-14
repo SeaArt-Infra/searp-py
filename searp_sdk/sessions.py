@@ -29,6 +29,12 @@ class SessionsService:
     def turn_stream(self, session_id: str, body: dict, *options: RequestOption):
         return stream_sse(self._client, "POST", f"{_session_path(session_id)}/turns", body, options)
 
+    def proactive(self, session_id: str, body: dict, *options: RequestOption) -> dict:
+        return request_json(self._client, "POST", f"{_session_path(session_id)}/proactive", body, options)
+
+    def proactive_stream(self, session_id: str, body: dict, *options: RequestOption):
+        return stream_sse(self._client, "POST", f"{_session_path(session_id)}/proactive", body, options)
+
     def patch(self, session_id: str, body: dict, *options: RequestOption) -> dict:
         return request_json(self._client, "PATCH", _session_path(session_id), body, options)
 

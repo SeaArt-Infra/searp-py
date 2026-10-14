@@ -256,6 +256,17 @@ op = client.operations.run(
 
 For streaming, use `client.sessions.turn_stream` and stop on `done`.
 
+Use `client.sessions.proactive` for an idempotent character-initiated message
+without user input, or `proactive_stream` for SSE:
+
+```python
+response = client.sessions.proactive(session["id"], {
+    "idempotency_key": "proactive-001",
+    "expected_revision": session["revision"],
+})
+print(response["text"])
+```
+
 ## Errors
 
 Catch `rp.SeaRPError` and branch on `exc.kind`. `rp.ERR_CONFLICT` usually means
@@ -264,7 +275,7 @@ a stale `expected_revision` or an idempotency key reused with different input.
 ## Route Reference
 
 - `sessions.create`, `create_experience`, `get`, `history_message`, `turn`,
-  `turn_stream`, `patch`, `rewind`, `fork`, `edit`
+  `turn_stream`, `proactive`, `proactive_stream`, `patch`, `rewind`, `fork`, `edit`
 - `operations.run`, `get`, `list`, `recover`, `traces`
 - `engine.health`, `live`, `metrics`, `capabilities`, `models`, `llm_status`, `llm_check`,
   `generation_models`, `create_generation`, `get_generation`, `assemble`,
