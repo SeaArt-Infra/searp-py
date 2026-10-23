@@ -15,7 +15,7 @@ class CinemaService:
         if callable(query):
             options = (query, *options)
             query = None
-        values = {key: query[key] for key in ("limit", "offset") if query and query.get(key) is not None}
+        values = {key: query[key] for key in ("limit", "offset", "order") if query and query.get(key) is not None}
         suffix = f"?{urlencode(values)}" if values else ""
         return request_json(self._client, "GET", f"{_path(session_id)}/rounds{suffix}", None, options)
 

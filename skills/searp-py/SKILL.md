@@ -59,7 +59,7 @@ use `engine.debug_chat` with `card_info` for temporary sampling/configuration.
 `sessions.create` rejects a nested `request`.
 Use `client.sessions.create_experience` for the currently published version.
 
-## Create A Role Card Session
+## Legacy Role Card Creation
 
 ```python
 card = client.cards.create(
@@ -107,10 +107,39 @@ For streaming, use `client.sessions.turn_stream` and stop on `done`.
 Catch `rp.SeaRPError` and branch on `exc.kind`. `rp.ERR_CONFLICT` usually means
 a stale `expected_revision` or an idempotency key reused with different input.
 
+## Release API additions (2026-10-23)
+
+Use `client.group_cards` for story cards, immutable versions, members,
+imports, preview and translations. Use `client.group_sessions` for creating group
+sessions, generating JSON/SSE turns, querying turn records and prompts.
+Member removals require a JSON body with `user_id` and
+`expected_latest_version`. Group generation takes `content` and supports a
+stable `Idempotency-Key` header; preserve the key and original input on retry.
+JSON responses include the flattened session revision and group `turn.segments`.
+The shared SSE parser also exposes `segment_*` and `parser_warning` events.
+Read history through the ordinary session get method.
+
+`client.sessions.inspiration` returns positive/neutral player reply
+suggestions. It accepts an empty body or per-call language and sampling,
+changes no history/revision, and has no SSE or idempotency. Every retry calls
+the model again. `client.cards.untranslated` queries missing
+translations; `fork_translations` copies existing catalog translations.
+Check per-item errors even when HTTP is 200.
+
+Card creation is deprecated with sunset 2027-01-01; existing create examples
+are for compatibility. Use catalog fork with `catalog_ids` and an explicit
+Control API base for onboarding published cards. Legacy batch-import is kept
+for older deployments. Consult API_REFERENCE.md for import payload differences
+between the release documents and registered handlers.
+Cinema lists support descending offset order; returned arrays remain sorted
+by ascending sequence. Recover abandon always needs
+`acknowledge_unknown: true`; use operation revision for recovery and session
+revision for generation. Terminal operation evidence defaults to 7 hours.
+
 ## Route Reference
 
 - `sessions.create`, `create_experience`, `get`, `history_message`, `turn`,
-  `turn_stream`, `patch`, `rewind`, `fork`, `edit`
+  `turn_stream`, `proactive`, `proactive_stream`, `inspiration`, `patch`, `rewind`, `fork`, `edit`
 - `operations.run`, `get`, `list`, `recover`, `traces`
 - `engine.health`, `live`, `metrics`, `capabilities`, `models`, `llm_status`, `llm_check`,
   `generation_models`, `create_generation`, `get_generation`, `assemble`,
@@ -121,3 +150,7 @@ a stale `expected_revision` or an idempotency key reused with different input.
 - `versions.preview`
 - `cinema.list_rounds`, `create_round`, `create_round_stream`, `get_round`,
   `get_image_task`, `generate_image_task`, `save_image_result`
+
+- `cards.untranslated`, `fork_translations`, `fork`
+- `group_cards`: CRUD, listing, versions, roster, characters, preview, import, translations
+- `group_sessions`: create, turn, turn stream, get turn, prompt

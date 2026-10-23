@@ -25,6 +25,8 @@ from .engine import EngineService
 from .cards import CardsService
 from .versions import VersionsService
 from .cinema import CinemaService
+from .group_cards import GroupCardsService
+from .group_sessions import GroupSessionsService
 
 WithHeader = with_header
 WithHeaders = with_headers
@@ -59,4 +61,6 @@ __all__ = [
     "CardsService",
     "VersionsService",
     "CinemaService",
+    "GroupCardsService",
+    "GroupSessionsService",
 ]

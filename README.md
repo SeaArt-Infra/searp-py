@@ -52,6 +52,36 @@ Use `engine.debug_chat` for temporary card/sampling configurations;
 See [API reference](API_REFERENCE.md) for all routes, pagination, translations,
 multimodal input, per-turn parameters, and migration notes.
 
+## Release API update
+
+Aligned with SeaRP release API docs `af4e254` on 2026-10-23. The SDK now
+covers group story cards and sessions, player inspiration suggestions, missing
+translation queries, translation reuse, catalog fork and Cinema order.
+
+```python
+suggestions = client.sessions.inspiration(session["id"], {"lang": "zh"})
+print(suggestions["replies"])
+
+group = client.group_sessions.create({
+    "group_id": group_id, "user_id": "visitor-1", "mode": "group_chat",
+})
+turn = client.group_sessions.turn(group["id"], {
+    "content": "Hello everyone.", "expected_revision": group["revision"],
+}, rp.with_header("Idempotency-Key", "group-turn-001"))
+print(turn["revision"], turn["turn"]["segments"])
+```
+
+Use `client.group_sessions.turn_stream` for group SSE.
+Handle segment events, errors and disconnects; only done confirms completion.
+Inspiration changes no history and calls the model again on each retry.
+
+`POST /v1/cards` is deprecated and scheduled to sunset on 2027-01-01.
+The role-card creation example below remains for existing integrations.
+For catalog cards, configure `control_api_base_url` and call
+`client.cards.fork` with a project ID and `catalog_ids`; inspect
+both `items` and `errors`. See [API reference](API_REFERENCE.md) for route
+coverage, import-document differences, group request fields and recovery.
+
 ## Services
 
 | Service | Purpose |
@@ -63,7 +93,7 @@ multimodal input, per-turn parameters, and migration notes.
 | `client.versions` | Version preview |
 | `client.cinema` | Cinema rounds and image tasks |
 
-## Role Card Session
+## Legacy Role Card Creation
 
 Create a role card with `client.cards.create`, then open a session from that
 card:
@@ -213,7 +243,7 @@ use `engine.debug_chat` with `card_info` for temporary sampling/configuration.
 `sessions.create` rejects a nested `request`.
 Use `client.sessions.create_experience` for the currently published version.
 
-## Create A Role Card Session
+## Legacy Role Card Creation
 
 ```python
 card = client.cards.create(
@@ -256,26 +286,44 @@ op = client.operations.run(
 
 For streaming, use `client.sessions.turn_stream` and stop on `done`.
 
-Use `client.sessions.proactive` for an idempotent character-initiated message
-without user input, or `proactive_stream` for SSE:
-
-```python
-response = client.sessions.proactive(session["id"], {
-    "idempotency_key": "proactive-001",
-    "expected_revision": session["revision"],
-})
-print(response["text"])
-```
-
 ## Errors
 
 Catch `rp.SeaRPError` and branch on `exc.kind`. `rp.ERR_CONFLICT` usually means
 a stale `expected_revision` or an idempotency key reused with different input.
 
+## Release API additions (2026-10-23)
+
+Use `client.group_cards` for story cards, immutable versions, members,
+imports, preview and translations. Use `client.group_sessions` for creating group
+sessions, generating JSON/SSE turns, querying turn records and prompts.
+Member removals require a JSON body with `user_id` and
+`expected_latest_version`. Group generation takes `content` and supports a
+stable `Idempotency-Key` header; preserve the key and original input on retry.
+JSON responses include the flattened session revision and group `turn.segments`.
+The shared SSE parser also exposes `segment_*` and `parser_warning` events.
+Read history through the ordinary session get method.
+
+`client.sessions.inspiration` returns positive/neutral player reply
+suggestions. It accepts an empty body or per-call language and sampling,
+changes no history/revision, and has no SSE or idempotency. Every retry calls
+the model again. `client.cards.untranslated` queries missing
+translations; `fork_translations` copies existing catalog translations.
+Check per-item errors even when HTTP is 200.
+
+Card creation is deprecated with sunset 2027-01-01; existing create examples
+are for compatibility. Use catalog fork with `catalog_ids` and an explicit
+Control API base for onboarding published cards. Legacy batch-import is kept
+for older deployments. Consult API_REFERENCE.md for import payload differences
+between the release documents and registered handlers.
+Cinema lists support descending offset order; returned arrays remain sorted
+by ascending sequence. Recover abandon always needs
+`acknowledge_unknown: true`; use operation revision for recovery and session
+revision for generation. Terminal operation evidence defaults to 7 hours.
+
 ## Route Reference
 
 - `sessions.create`, `create_experience`, `get`, `history_message`, `turn`,
-  `turn_stream`, `proactive`, `proactive_stream`, `patch`, `rewind`, `fork`, `edit`
+  `turn_stream`, `proactive`, `proactive_stream`, `inspiration`, `patch`, `rewind`, `fork`, `edit`
 - `operations.run`, `get`, `list`, `recover`, `traces`
 - `engine.health`, `live`, `metrics`, `capabilities`, `models`, `llm_status`, `llm_check`,
   `generation_models`, `create_generation`, `get_generation`, `assemble`,
@@ -286,4 +334,8 @@ a stale `expected_revision` or an idempotency key reused with different input.
 - `versions.preview`
 - `cinema.list_rounds`, `create_round`, `create_round_stream`, `get_round`,
   `get_image_task`, `generate_image_task`, `save_image_result`
+
+- `cards.untranslated`, `fork_translations`, `fork`
+- `group_cards`: CRUD, listing, versions, roster, characters, preview, import, translations
+- `group_sessions`: create, turn, turn stream, get turn, prompt
 </script>

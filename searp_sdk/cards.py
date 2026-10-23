@@ -14,6 +14,7 @@ class CardsService:
         self._control_client = control_client
 
     def import_batch(self, body: dict, *options: RequestOption) -> dict:
+        """Legacy deployment route; current release onboarding uses fork."""
         if self._control_client is None:
             raise SeaRPError(kind=ERR_INVALID, message="cards.import_batch requires control_api_base_url (full /admin/v1 base)")
         return request_json(self._control_client, "POST", "/cards/import/batch", body, options)
@@ -21,7 +22,24 @@ class CardsService:
     def list(self, query: dict | None = None, *options: RequestOption) -> list:
         return request_json(self._client, "GET", f"/cards{_card_query(query)}", None, options)
 
+    def fork(self, project_id: str, body: dict, *options: RequestOption) -> dict:
+        if self._control_client is None:
+            raise SeaRPError(kind=ERR_INVALID, message="cards.fork requires control_api_base_url (full /admin/v1 base)")
+        return request_json(self._control_client, "POST", f"/projects/{_id(project_id)}/cards/fork", body, options)
+
+    def untranslated(self, query: dict, *options: RequestOption) -> dict:
+        values = {}
+        for key in ("locale", "limit", "offset", "include_partial"):
+            value = query.get(key)
+            if value is not None:
+                values[key] = str(value).lower() if isinstance(value, bool) else value
+        return request_json(self._client, "GET", f"/cards/untranslated?{urlencode(values)}", None, options)
+
+    def fork_translations(self, body: dict, *options: RequestOption) -> dict:
+        return request_json(self._client, "POST", "/cards/translations/fork", body, options)
+
     def create(self, body: dict, *options: RequestOption) -> dict:
+        """Deprecated endpoint, scheduled to sunset on 2027-01-01."""
         return request_json(self._client, "POST", "/cards", body, options)
 
     def get(self, card_id: str, query: dict | None = None, *options: RequestOption) -> dict:

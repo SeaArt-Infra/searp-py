@@ -7,6 +7,8 @@ from urllib.parse import urlparse
 
 from .cards import CardsService
 from .cinema import CinemaService
+from .group_cards import GroupCardsService
+from .group_sessions import GroupSessionsService
 from .engine import EngineService
 from .errors import ERR_GENERAL, SeaRPError
 from .operations import OperationsService
@@ -62,6 +64,8 @@ class Client:
         self.cards = CardsService(transport, control_transport)
         self.versions = VersionsService(transport)
         self.cinema = CinemaService(transport)
+        self.group_cards = GroupCardsService(transport)
+        self.group_sessions = GroupSessionsService(transport)
 
         self.Sessions = self.sessions
         self.Operations = self.operations
@@ -69,6 +73,8 @@ class Client:
         self.Cards = self.cards
         self.Versions = self.versions
         self.Cinema = self.cinema
+        self.GroupCards = self.group_cards
+        self.GroupSessions = self.group_sessions
 
 
 def new(config: ClientConfig | None = None) -> Client:
