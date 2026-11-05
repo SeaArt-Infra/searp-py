@@ -15,6 +15,7 @@ from .operations import OperationsService
 from .sessions import SessionsService
 from .transport import TransportClient
 from .versions import VersionsService
+from .world_books import WorldBooksService
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8788"
 DEFAULT_TIMEOUT = 300.0
@@ -66,6 +67,7 @@ class Client:
         self.cinema = CinemaService(transport)
         self.group_cards = GroupCardsService(transport)
         self.group_sessions = GroupSessionsService(transport)
+        self.world_books = WorldBooksService(transport)
 
         self.Sessions = self.sessions
         self.Operations = self.operations
@@ -75,6 +77,7 @@ class Client:
         self.Cinema = self.cinema
         self.GroupCards = self.group_cards
         self.GroupSessions = self.group_sessions
+        self.WorldBooks = self.world_books
 
 
 def new(config: ClientConfig | None = None) -> Client:

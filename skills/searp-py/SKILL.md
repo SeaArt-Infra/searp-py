@@ -124,6 +124,9 @@ suggestions. It accepts an empty body or per-call language and sampling,
 changes no history/revision, and has no SSE or idempotency. Every retry calls
 the model again. `client.cards.untranslated` queries missing
 translations; `fork_translations` copies existing catalog translations.
+Use `client.sessions.custom_task` for read-only caller-supplied PE work,
+`client.cards.translate` for model-backed card translation, and
+`client.world_books` for project/catalog world books.
 Check per-item errors even when HTTP is 200.
 
 Card creation is deprecated with sunset 2027-01-01; existing create examples

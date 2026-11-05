@@ -5,6 +5,7 @@ from searp_sdk import Client, ClientConfig, GroupCardsService, GroupSessionsServ
 from searp_sdk.cards import CardsService
 from searp_sdk.cinema import CinemaService
 from searp_sdk.sessions import SessionsService
+from searp_sdk.world_books import WorldBooksService
 
 
 class Transport:
@@ -108,3 +109,25 @@ class ReleaseContractTests(unittest.TestCase):
         self.assertEqual(parse_qs(urlsplit(transport.calls[1][1]).query)['include_partial'], ['false'])
         self.assertEqual(transport.calls[3][1], '/projects/p%2F1/cards/fork')
         self.assertEqual(parse_qs(urlsplit(transport.calls[4][1]).query)['order'], ['desc'])
+
+    def test_world_books_custom_task_and_translation_updates(self):
+        transport = Transport()
+        client = Client.__new__(Client)
+        client.sessions = SessionsService(transport)
+        client.cards = CardsService(transport, transport)
+        client.world_books = WorldBooksService(transport)
+        client.sessions.custom_task('s1', {'pe': 'summarize', 'model': 'm1'})
+        client.cards.translate('c1', {'lang': 'zh'})
+        client.cards.untranslated({'card_ids': ['c1', 'c2'], 'locales': ['zh', 'ja'], 'missing_only': True, 'q': 'Ada'})
+        client.world_books.list({'limit': 10, 'cursor': 'c0'})
+        client.world_books.create({'title': 'Lore'})
+        client.world_books.get('book/1')
+        client.world_books.delete('book/1')
+        client.world_books.catalog_list()
+        client.world_books.catalog_get('book/1')
+        self.assertEqual(transport.calls[0][1], '/sessions/s1/custom-task')
+        self.assertEqual(transport.calls[1][1], '/cards/c1/translate')
+        query = parse_qs(urlsplit(transport.calls[2][1]).query)
+        self.assertEqual(query['card_ids'], ['c1,c2'])
+        self.assertEqual(query['locales'], ['zh,ja'])
+        self.assertEqual(query['missing_only'], ['true'])

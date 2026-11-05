@@ -29,11 +29,24 @@ class CardsService:
 
     def untranslated(self, query: dict, *options: RequestOption) -> dict:
         values = {}
-        for key in ("locale", "limit", "offset", "include_partial"):
+        aliases = {"card_ids": ("card_ids", "cardIds"), "locales": ("locales",), "languages": ("languages",), "fields": ("fields",), "missing_only": ("missing_only", "missingOnly"), "include_total": ("include_total", "includeTotal")}
+        for key in ("locale", "limit", "offset", "include_partial", "q"):
             value = query.get(key)
             if value is not None:
                 values[key] = str(value).lower() if isinstance(value, bool) else value
-        return request_json(self._client, "GET", f"/cards/untranslated?{urlencode(values)}", None, options)
+        for key, names in aliases.items():
+            value = next((query.get(name) for name in names if query.get(name) is not None), None)
+            if value is None:
+                continue
+            if isinstance(value, (list, tuple)):
+                value = ",".join(str(item) for item in value)
+            values[key] = str(value).lower() if isinstance(value, bool) else value
+        suffix = f"?{urlencode(values)}" if values else ""
+        return request_json(self._client, "GET", f"/cards/untranslated{suffix}", None, options)
+
+    def translate(self, card_id: str, body: dict, *options: RequestOption) -> dict:
+        """Fill missing card translations through the configured model."""
+        return request_json(self._client, "POST", f"/cards/{_id(card_id)}/translate", body, options)
 
     def fork_translations(self, body: dict, *options: RequestOption) -> dict:
         return request_json(self._client, "POST", "/cards/translations/fork", body, options)

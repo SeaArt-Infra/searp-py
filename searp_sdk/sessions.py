@@ -41,6 +41,10 @@ class SessionsService:
     def inspiration(self, session_id: str, body: dict | None = None, *options: RequestOption) -> dict:
         return request_json(self._client, "POST", f"{_session_path(session_id)}/inspiration", body if body is not None else {}, options)
 
+    def custom_task(self, session_id: str, body: dict, *options: RequestOption) -> dict:
+        """Run a caller-supplied PE against the session without modifying it."""
+        return request_json(self._client, "POST", f"{_session_path(session_id)}/custom-task", body, options)
+
     def rewind(self, session_id: str, body: dict, *options: RequestOption) -> dict:
         return request_json(self._client, "POST", f"{_session_path(session_id)}/rewind", body, options)
 
