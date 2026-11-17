@@ -254,7 +254,7 @@ class LatestContractTests(unittest.TestCase):
         import json
 
         message = [{"type": "text", "text": "what?"}, {"type": "image_url", "image_url": {"url": "https://cdn.example/a.png", "detail": "auto"}}]
-        body = {"action": "reply", "message": message, "lang": "zh", "lastest_system_prompt": "brief", "favorability_score": 45, "user": {"name": "Visitor"}, "metadata": {"history": [{"role": "user", "content": "hi"}]}, "top_p": 0.9, "thinking_mode": True}
+        body = {"action": "reply", "message": message, "lang": "zh", "style_prompt_override": "Speak tersely.", "lastest_system_prompt": "brief", "favorability_score": 45, "user": {"name": "Visitor"}, "metadata": {"history": [{"role": "user", "content": "hi"}]}, "top_p": 0.9, "thinking_mode": True}
         transport = FakeTransport(payload=json.dumps({"history": [{"role": "user", "content": message}], "history_import": {"seeded": {"messages": 1, "dropped": 0}}, "prompt_redacted": True}).encode())
         result = SessionsService(transport).turn("s1", body)
         self.assertEqual(transport.calls[0]["body"], body)
